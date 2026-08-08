@@ -461,6 +461,7 @@ bool msgRcvd(IOHC::iohcPacket *iohc) {
                     case 0x0000: action = "OPEN"; break;
                     case 0xC800: action = "CLOSE"; break;
                     case 0xD200: action = "STOP"; break;
+                    case 0xD400: return false; /* MP: Ignore / FP: ReadOnly */
                     case 0xD803: action = "VENT"; break;
                     case 0x6400: action = "FORCE"; break;
                     default: break;
