@@ -233,8 +233,8 @@ void handleApiRemotes(AsyncWebServerRequest *request, JsonArray &root) {
 }
 
 void handleDownloadDevices(AsyncWebServerRequest *request) {
-  if (LittleFS.exists(IOHC_1W_REMOTE)) {
-    request->send(LittleFS, IOHC_1W_REMOTE, "application/json", true);
+  if (LittleFS.exists(IOHC_1W_REMOTES_FILE)) {
+    request->send(LittleFS, IOHC_1W_REMOTES_FILE, "application/json", true);
   } else {
     request->send(404, "application/json",
                   "{\"message\":\"1W.json not found\"}");
@@ -261,7 +261,7 @@ void handleUploadDevicesFile(AsyncWebServerRequest *request, String filename,
                              size_t index, uint8_t *data, size_t len,
                              bool final) {
   if (!index) {
-    request->_tempFile = LittleFS.open(IOHC_1W_REMOTE, "w");
+    request->_tempFile = LittleFS.open(IOHC_1W_REMOTES_FILE, "w");
   }
   if (len) {
     request->_tempFile.write(data, len);

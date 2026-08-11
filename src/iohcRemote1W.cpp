@@ -32,6 +32,8 @@
 #include <web_server_handler.h>
 #endif
 
+#define LOG_TAG "iochRemote1W"
+
 namespace IOHC {
     iohcRemote1W* iohcRemote1W::_iohcRemote1W = nullptr;
     static constexpr uint32_t DEFAULT_TRAVEL_TIME_SEC = 10;
@@ -669,14 +671,24 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
    bool iohcRemote1W::load() {
         _radioInstance = iohcRadio::getInstance();
 
-        if (LittleFS.exists(IOHC_1W_REMOTE))
-            Serial.printf("Loading 1W remote settings from %s\n", IOHC_1W_REMOTE);
+        if (LittleFS.exists(IOHC_1W_REMOTES_FILE))
+            Serial.printf("Loading 1W remote settings from '%s'\n", IOHC_1W_REMOTES_FILE);
+        else if (LittleFS.exists(IOHC_1W_REMOTES_BACKUP_FILE))
+        {
+            ESP_LOGW(LOG_TAG, "1W remote settings file '%s' not found, replacing by backup file '%s'",
+                IOHC_1W_REMOTES_FILE, IOHC_1W_REMOTES_BACKUP_FILE);
+            if (!LittleFS.rename(IOHC_1W_REMOTES_BACKUP_FILE, IOHC_1W_REMOTES_FILE))
+            {
+                ESP_LOGE(LOG_TAG, "Could not recover 1W remote backup settings file");
+                return false;
+            }
+        }
         else {
             Serial.printf("*1W remote not available\n");
             return false;
         }
 
-        fs::File f = LittleFS.open(IOHC_1W_REMOTE, "r");
+        fs::File f = LittleFS.open(IOHC_1W_REMOTES_FILE, "r");
         JsonDocument doc; 
 
         DeserializationError error = deserializeJson(doc, f); 
@@ -787,16 +799,14 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
    bool iohcRemote1W::save() {
         MutexGuard guard(saveMutex);
         if (remotes.empty()) {
-            Serial.printf("Refusing to save empty 1W remote list to %s\n", IOHC_1W_REMOTE);
+            Serial.printf("Refusing to save empty 1W remote list to %s\n", IOHC_1W_REMOTES_FILE);
             return false;
         }
 
-        constexpr const char *tempFile = "/1W.json.tmp";
-        constexpr const char *backupFile = "/1W.json.bak";
-        LittleFS.remove(tempFile);
-        fs::File f = LittleFS.open(tempFile, "w");
+        LittleFS.remove(IOHC_1W_REMOTES_TEMP_FILE);
+        fs::File f = LittleFS.open(IOHC_1W_REMOTES_TEMP_FILE, "w");
         if (!f) {
-            Serial.printf("Failed to open temporary 1W settings file %s\n", tempFile);
+            Serial.printf("Failed to open temporary 1W settings file %s\n", IOHC_1W_REMOTES_TEMP_FILE);
             return false;
         }
         JsonDocument doc;
@@ -838,27 +848,27 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
         f.flush();
         f.close();
         if (written == 0) {
-            LittleFS.remove(tempFile);
+            LittleFS.remove(IOHC_1W_REMOTES_TEMP_FILE);
             Serial.println("Failed to serialize 1W settings");
             return false;
         }
 
-        LittleFS.remove(backupFile);
-        if (LittleFS.exists(IOHC_1W_REMOTE) &&
-            !LittleFS.rename(IOHC_1W_REMOTE, backupFile)) {
-            LittleFS.remove(tempFile);
+        LittleFS.remove(IOHC_1W_REMOTES_BACKUP_FILE);
+        if (LittleFS.exists(IOHC_1W_REMOTES_FILE) &&
+            !LittleFS.rename(IOHC_1W_REMOTES_FILE, IOHC_1W_REMOTES_BACKUP_FILE)) {
+            LittleFS.remove(IOHC_1W_REMOTES_TEMP_FILE);
             Serial.println("Failed to back up 1W settings file");
             return false;
         }
-        if (!LittleFS.rename(tempFile, IOHC_1W_REMOTE)) {
+        if (!LittleFS.rename(IOHC_1W_REMOTES_TEMP_FILE, IOHC_1W_REMOTES_FILE)) {
             Serial.println("Failed to replace 1W settings file");
-            LittleFS.remove(tempFile);
-            if (LittleFS.exists(backupFile)) {
-                LittleFS.rename(backupFile, IOHC_1W_REMOTE);
+            LittleFS.remove(IOHC_1W_REMOTES_TEMP_FILE);
+            if (LittleFS.exists(IOHC_1W_REMOTES_BACKUP_FILE)) {
+                LittleFS.rename(IOHC_1W_REMOTES_BACKUP_FILE, IOHC_1W_REMOTES_FILE);
             }
             return false;
         }
-        LittleFS.remove(backupFile);
+        LittleFS.remove(IOHC_1W_REMOTES_BACKUP_FILE);
 
         return true;
     }

@@ -23,7 +23,9 @@
 #include <tokens.h>
 #include <blind_position.h>
 
-#define IOHC_1W_REMOTE  "/1W.json"
+#define IOHC_1W_REMOTES_FILE  "/1W.json"
+#define IOHC_1W_REMOTES_TEMP_FILE IOHC_1W_REMOTES_FILE ".tmp"
+#define IOHC_1W_REMOTES_BACKUP_FILE IOHC_1W_REMOTES_FILE ".bak"
 
 /*
     Singleton class with a full implementation of a VELUX KLIxxx controller
