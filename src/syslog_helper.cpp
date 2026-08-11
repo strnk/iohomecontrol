@@ -108,26 +108,26 @@ void initSyslog() {
              syslog_enabled ? 1 : 0, syslog_server.c_str(), syslog_port);
 
     if (!syslog_enabled) {
-        ESP_LOGD(LOG_TAG, "Syslog disabled - not initializing");
+        ESP_LOGW(LOG_TAG, "Syslog disabled - not initializing");
         resetSyslog();
         return;
     }
 
     if (syslog_server.empty()) {
-        ESP_LOGD(LOG_TAG, "Syslog server not set");
+        ESP_LOGE(LOG_TAG, "Syslog server not set");
         resetSyslog();
         return;
     }
 
     if (syslog_port == 0 || syslog_port > 65535) {
-        ESP_LOGD(LOG_TAG, "Invalid syslog port: %u", syslog_port);
+        ESP_LOGE(LOG_TAG, "Invalid syslog port: %u", syslog_port);
         resetSyslog();
         return;
     }
 
     if (!syslogIP.fromString(syslog_server.c_str())) {
         if (WiFi.hostByName(syslog_server.c_str(), syslogIP) != 1) {
-            ESP_LOGD(LOG_TAG, "Unable to resolve syslog server: %s", syslog_server.c_str());
+            ESP_LOGE(LOG_TAG, "Unable to resolve syslog server: %s", syslog_server.c_str());
             resetSyslog();
             return;
         }
@@ -138,7 +138,7 @@ void initSyslog() {
         syslogReady = true;
     }
 
-    ESP_LOGD(LOG_TAG, "Syslog initialized with IP: %s", syslogIP.toString().c_str());
+    ESP_LOGI(LOG_TAG, "Syslog initialized with IP: %s", syslogIP.toString().c_str());
 }
 
 // Real sender with RFC header
@@ -151,11 +151,11 @@ void sendSyslog(const String &msg, int severity) {
         return;
     }
     if (!syslogReady) {
-        ESP_LOGD(LOG_TAG, "Syslog not ready, initializing");
+        ESP_LOGI(LOG_TAG, "Syslog not ready, initializing");
         initSyslog();
     }
     if (!syslog_enabled || !syslogReady) {
-        ESP_LOGD(LOG_TAG, "Syslog initialization failed");
+        ESP_LOGE(LOG_TAG, "Syslog initialization failed");
         return;
     }
 
