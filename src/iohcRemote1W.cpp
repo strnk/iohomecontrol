@@ -32,6 +32,8 @@
 #include <web_server_handler.h>
 #endif
 
+#define LOG_TAG "iohcRemote1W"
+
 namespace IOHC {
     iohcRemote1W* iohcRemote1W::_iohcRemote1W = nullptr;
     static constexpr uint32_t DEFAULT_TRAVEL_TIME_SEC = 10;
@@ -131,7 +133,7 @@ namespace IOHC {
               } );
 
         if (it == remotes.end()) {
-            printf("ERROR %s NOT IN JSON", description.c_str());
+            ESP_LOGE(LOG_TAG, "Remote '%s' not found in JSON", description.c_str());
             return;
         }
 
@@ -213,7 +215,7 @@ namespace IOHC {
                 _radioInstance->send(packets2send);
                 display1WAction(r.node, remoteButtonToString(cmd), "TX", r.name.c_str());
 
-                Serial.printf("%s position: %.0f%%\n", r.name.c_str(), r.positionTracker.getPosition());
+                ESP_LOGI(LOG_TAG, "%s position: %.0f%%\n", r.name.c_str(), r.positionTracker.getPosition());
                 display1WPosition(r.node, r.positionTracker.getPosition(), r.name.c_str());
 
                 r.paired = true;
@@ -262,7 +264,7 @@ namespace IOHC {
                 //printf("\n");
                 display1WAction(r.node, remoteButtonToString(cmd), "TX", r.name.c_str());
 
-                Serial.printf("%s position: %.0f%%\n", r.name.c_str(), r.positionTracker.getPosition());
+                ESP_LOGI(LOG_TAG, "%s position: %.0f%%\n", r.name.c_str(), r.positionTracker.getPosition());
                 display1WPosition(r.node, r.positionTracker.getPosition(), r.name.c_str());
 
                 r.paired = false;
@@ -562,7 +564,7 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
                             packet->payload.packet.msg.p0x00_16.fp2 = 0xCD;
                             packet->payload.packet.msg.p0x00_16.data[0] = 0x2E;
                             packet->payload.packet.msg.p0x00_16.data[1] = 0x00;
-                             if (packet->payload.packet.header.source[2] == 0x1B) {
+                            if (packet->payload.packet.header.source[2] == 0x1B) {
                                 // packet->payload.packet.header.source[2] = 0x1A;
                                 packet->payload.packet.msg.p0x00_16.fp2 = 0xCC;
                                 packet->payload.packet.msg.p0x00_16.data[0] = 0xA2;
@@ -658,7 +660,7 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
                     _radioInstance->send(packets2send);
 
                     display1WAction(r.node, remoteButtonToString(cmd), "TX", r.name.c_str());
-                    Serial.printf("%s position: %.0f%%\n", r.name.c_str(), r.positionTracker.getPosition());
+                    ESP_LOGI(LOG_TAG, "%s position: %.0f%%\n", r.name.c_str(), r.positionTracker.getPosition());
                     display1WPosition(r.node, r.positionTracker.getPosition(), r.name.c_str());
                     break;
                 }
@@ -670,9 +672,11 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
         _radioInstance = iohcRadio::getInstance();
 
         if (LittleFS.exists(IOHC_1W_REMOTE))
-            Serial.printf("Loading 1W remote settings from %s\n", IOHC_1W_REMOTE);
+            ESP_LOGI(LOG_TAG, "Loading 1W remote settings from '%s'\n", 
+                IOHC_1W_REMOTE);
         else {
-            Serial.printf("*1W remote not available\n");
+            ESP_LOGE(LOG_TAG, "1W remote settings file '%s' not found",
+                IOHC_1W_REMOTE);
             return false;
         }
 
@@ -682,8 +686,8 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
         DeserializationError error = deserializeJson(doc, f); 
 
         if (error) {
-            Serial.print("Failed to parse JSON: ");
-            Serial.println(error.c_str());
+            ESP_LOGE(LOG_TAG, "JSON error while parsing 1W remote settings file: %s",
+                error.c_str());
             f.close();
             return false;
         }
@@ -694,12 +698,9 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
         std::vector<remote> loadedRemotes;
         for (JsonPair kv: doc.as<JsonObject>()) {
             remote r;
-            // hexStringToBytes(kv.key().c_str(), _node);
             hexStringToBytes(kv.key().c_str(), r.node);
-            // Serial.printf("%s\n", kv.key().c_str());
 
             auto jobj = kv.value().as<JsonObject>();
-            // hexStringToBytes(jobj["key"].as<const char *>(), _key);
             hexStringToBytes(jobj["key"].as<const char *>(), r.key);
 
             uint8_t btmp[2];
@@ -717,25 +718,17 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
             // Persist the highest value back to NVS
             nvs_write_sequence(r.node, r.sequence);
             JsonArray jarr = jobj["type"];
-            // Réservez de l'espace dans le vecteur pour éviter les allocations inutiles
 
-            //_type.reserve(jarr.size());
+            // Réservez de l'espace dans le vecteur pour éviter les allocations inutiles
             r.type.reserve(jarr.size());
 
             // Iterate through the JSON  type array
             for (auto && i : jarr) {
-            // _type.insert(_type.begin() + i, jarr[i].as<uint16_t>());
-            //_type.push_back(i.as<uint16_t>());
                 r.type.push_back(i.as<uint8_t>());
             }
                        
-            // _type = jobj["type"].as<u_int16_t>();
-//            r.type = jobj["type"].as<u_int16_t>();
-
-            // _manufacturer = jobj["manufacturer_id"].as<uint8_t>();
             r.manufacturer = jobj["manufacturer_id"].as<uint8_t>();
             r.description = jobj["description"].as<std::string>();
-
 
             if (jobj["name"].is<std::string>()) {
                 r.name = jobj["name"].as<std::string>();
@@ -750,17 +743,20 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
                 r.travelTime = DEFAULT_TRAVEL_TIME_SEC;
                 updateFile = true;
             }
+
             if (jobj["paired"].is<bool>()) {
                 r.paired = jobj["paired"].as<bool>();
             } else {
                 r.paired = false;
                 updateFile = true;
             }
+
             if (jobj["repeatOnNoResponse"].is<bool>()) {
                 r.repeatOnNoResponse = jobj["repeatOnNoResponse"].as<bool>();
             } else {
                 r.repeatOnNoResponse = false;
             }
+
             r.positionTracker.setTravelTime(r.travelTime);
             if (jobj["position"].is<float>() || jobj["position"].is<int>()) {
                 r.positionTracker.setPosition(
@@ -769,6 +765,7 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
                 r.positionTracker.setPosition(0.0f);
                 updateFile = true;
             }
+
             r.lastPublishedPosition = r.positionTracker.getPosition();
             r.lastSavedPosition = r.positionTracker.getPosition();
 
@@ -776,7 +773,8 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
         }
 
         remotes = loadedRemotes;
-        Serial.printf("Loaded %d x 1W remotes\n", remotes.size()); // _type.size());
+        ESP_LOGI(LOG_TAG, "Loaded %d x 1W remotes\n", remotes.size());
+
         // Ensure JSON reflects the latest sequence values and persist defaults
         if (updateFile) {
             this->save();
@@ -784,10 +782,11 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
         // _sequence = 0x1402;    // DEBUG
         return true;
     }
-   bool iohcRemote1W::save() {
+
+    bool iohcRemote1W::save() {
         MutexGuard guard(saveMutex);
         if (remotes.empty()) {
-            Serial.printf("Refusing to save empty 1W remote list to %s\n", IOHC_1W_REMOTE);
+            ESP_LOGW(LOG_TAG, "Refusing to save empty 1W remote list to %s\n", IOHC_1W_REMOTE);
             return false;
         }
 
@@ -796,24 +795,21 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
         LittleFS.remove(tempFile);
         fs::File f = LittleFS.open(tempFile, "w");
         if (!f) {
-            Serial.printf("Failed to open temporary 1W settings file %s\n", tempFile);
+            ESP_LOGE(LOG_TAG, "Failed to open temporary 1W settings file %s\n", tempFile);
             return false;
         }
+
         JsonDocument doc;
         for (const auto&r: remotes) {
-            // jobj["key"] = bytesToHexString(_key, sizeof(_key));
             auto jobj = doc[bytesToHexString(r.node, sizeof(r.node))].to<JsonObject>();
             jobj["key"] = bytesToHexString(r.key, sizeof(r.key));
 
             uint8_t btmp[2];
-            // btmp[1] = _sequence & 0x00ff;
-            // btmp[0] = _sequence >> 8;
             btmp[1] = r.sequence & 0x00ff;
             btmp[0] = r.sequence >> 8;
 
             jobj["sequence"] = bytesToHexString(btmp, sizeof(btmp));
             
-            // JsonArray jarr = jobj.createNestedArray("type");
             auto jarr = jobj["type"].to<JsonArray>();
             for (uint8_t i : r.type) {
                 // if (i)
@@ -822,7 +818,6 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
                 // break;
                 }
 
-            // jobj["manufacturer_id"] = _manufacturer;
             jobj["manufacturer_id"] = r.manufacturer;
             jobj["description"] = r.description;
             jobj["name"] = r.name;
@@ -839,7 +834,7 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
         f.close();
         if (written == 0) {
             LittleFS.remove(tempFile);
-            Serial.println("Failed to serialize 1W settings");
+            ESP_LOGE(LOG_TAG, "Failed to serialize 1W settings");
             return false;
         }
 
@@ -847,11 +842,12 @@ Every 9 -> 0x20 12:41:28.171 > (23) 1W S 1 E 1  FROM B60D1A TO 00003F CMD 20 <  
         if (LittleFS.exists(IOHC_1W_REMOTE) &&
             !LittleFS.rename(IOHC_1W_REMOTE, backupFile)) {
             LittleFS.remove(tempFile);
-            Serial.println("Failed to back up 1W settings file");
+            ESP_LOGE(LOG_TAG, "Failed to back up 1W settings file");
             return false;
         }
+
         if (!LittleFS.rename(tempFile, IOHC_1W_REMOTE)) {
-            Serial.println("Failed to replace 1W settings file");
+            ESP_LOGE(LOG_TAG, "Failed to replace 1W settings file");
             LittleFS.remove(tempFile);
             if (LittleFS.exists(backupFile)) {
                 LittleFS.rename(backupFile, IOHC_1W_REMOTE);
