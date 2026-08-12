@@ -182,7 +182,7 @@ namespace IOHC {
                 _radioInstance->send(packets2send);
                 display1WAction(r.node, remoteButtonToString(cmd), "TX", r.name.c_str());
 
-                ESP_LOGI(LOG_TAG, "%s position: %.0f%%\n", r.name.c_str(), r.positionTracker.getPosition());
+                ESP_LOGI(LOG_TAG, "%s position: %.0f%%", r.name.c_str(), r.positionTracker.getPosition());
                 display1WPosition(r.node, r.positionTracker.getPosition(), r.name.c_str());
 
                 r.paired = true;

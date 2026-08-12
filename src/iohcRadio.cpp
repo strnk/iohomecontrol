@@ -370,7 +370,7 @@ void iohcRadio::onTxTicker(void *arg) {
     // 🩵 Fallback: Check IRQFLAGS2 (0x3F) for PacketSent in FSK mode
     uint8_t irqFlags2 = Radio::readByte(0x3F); // REG_IRQFLAGS2
     if (irqFlags2 & 0x08) { // Bit 3 == PacketSent (TXDONE in FSK)
-        ESP_LOGD(LOG_TAG, "FSK: Detected PacketSent (TXDONE) via register (ISR missed?)\n");
+        ESP_LOGD(LOG_TAG, "FSK: Detected PacketSent (TXDONE) via register (ISR missed?)");
         Radio::writeByte(0x3F, 0x08); // Clear PacketSent bit
         iohcRadio::txComplete = true;
     }
