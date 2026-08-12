@@ -100,7 +100,7 @@ void setup() {
     esp_log_set_vprintf(log_to_buffer_and_serial);
     esp_log_level_set("*", ESP_LOG_DEBUG);    // Or VERBOSE for ESP_LOGV
 
-    Serial.printf("Firmware version: %s\n", firmwareVersion());
+    ESP_LOGI(LOG_TAG_SETUP, "Firmware version: %s", firmwareVersion());
 
 
     initDisplay(); // Init OLED display
@@ -220,7 +220,7 @@ bool msgRcvd(IOHC::iohcPacket *iohc) {
 
     switch (iohc->payload.packet.header.cmd) {
         case iohcDevice::RECEIVED_DISCOVER_0x28: {
-            ESP_LOGI(LOG_TAG_MSG_RECV_CALLBACK, "2W Pairing Asked\n");
+            ESP_LOGI(LOG_TAG_MSG_RECV_CALLBACK, "2W Pairing Asked");
             if (!Cmd::pairMode) break;
 
             // 0x0b OverKiz 0x0c Atlantic
@@ -248,7 +248,7 @@ bool msgRcvd(IOHC::iohcPacket *iohc) {
 
             if (!Cmd::pairMode)
             {
-                ESP_LOGW(LOG_TAG_MSG_RECV_CALLBACK, "2W pairing request refused: pair mode is disabled\n");
+                ESP_LOGW(LOG_TAG_MSG_RECV_CALLBACK, "2W pairing request refused: pair mode is disabled");
                 break;
             }
 
@@ -282,7 +282,7 @@ bool msgRcvd(IOHC::iohcPacket *iohc) {
             break;
         }
         case iohcDevice::RECEIVED_DISCOVER_ACTUATOR_0x2C: {
-            ESP_LOGV(LOG_TAG_MSG_RECV_CALLBACK, "2W actuator ACK asked\n");
+            ESP_LOGV(LOG_TAG_MSG_RECV_CALLBACK, "2W actuator ACK asked");
             if (!Cmd::pairMode) break;
 
             std::vector<uint8_t> toSend = {};
@@ -304,12 +304,12 @@ bool msgRcvd(IOHC::iohcPacket *iohc) {
             break;
         }
         case iohcDevice::RECEIVED_LAUNCH_KEY_TRANSFERT_0x38: {
-            ESP_LOGV(LOG_TAG_MSG_RECV_CALLBACK, "2W key transfer asked after command %02X\n", iohc->payload.packet.header.cmd);
+            ESP_LOGV(LOG_TAG_MSG_RECV_CALLBACK, "2W key transfer asked after command %02X", iohc->payload.packet.header.cmd);
             ESP_LOG_BUFFER_HEX_LEVEL(LOG_TAG_MSG_RECV_CALLBACK, iohc->payload.buffer + 9, 7, ESP_LOG_VERBOSE);
 
             if (!Cmd::pairMode) 
             {
-                ESP_LOGW(LOG_TAG_MSG_RECV_CALLBACK, "2W key transfer refused: pair mode is disabled\n");
+                ESP_LOGW(LOG_TAG_MSG_RECV_CALLBACK, "2W key transfer refused: pair mode is disabled");
                 break;
             }
 
@@ -386,7 +386,7 @@ bool msgRcvd(IOHC::iohcPacket *iohc) {
                 //                    challengeAsked.assign(iohc->payload.packet.msg.variableData.data, iohc->payload.packet.msg.variableData.data + iohc->payload.packet.msg.variableData.size);
                 challengeAsked.assign(iohc->payload.buffer + 9, iohc->payload.buffer + 15);
                 const size_t lastSendCmd = IOHC::lastSendCmd.load();
-                ESP_LOGV(LOG_TAG_MSG_RECV_CALLBACK, "Challenge asked after last sent command %02X, memorized command %02X\n", 
+                ESP_LOGV(LOG_TAG_MSG_RECV_CALLBACK, "Challenge asked after last sent command %02X, memorized command %02X", 
                     lastSendCmd, cozyDevice2W->memorizeSend.memorizedCmd);
 
                 if (Cmd::scanMode) {
@@ -540,7 +540,7 @@ bool msgRcvd(IOHC::iohcPacket *iohc) {
             break;
         }
         case 0X2E: {
-            ESP_LOGV(LOG_TAG_MSG_RECV_CALLBACK, "1W Learning mode\n");
+            ESP_LOGV(LOG_TAG_MSG_RECV_CALLBACK, "1W Learning mode");
             break;
         }
         case 0x39: {
@@ -638,7 +638,7 @@ bool msgArchive(IOHC::iohcPacket *iohc) {
     }
     radioPackets[nextPacket] = new IOHC::iohcPacket;
     if (!radioPackets[nextPacket]) {
-        ESP_LOGE(LOG_TAG_MSG_ARCHIVE_CALLBACK, "*** Malloc failed!\n");
+        ESP_LOGE(LOG_TAG_MSG_ARCHIVE_CALLBACK, "*** Malloc failed!");
         return false;
     }
 
@@ -654,7 +654,7 @@ bool msgArchive(IOHC::iohcPacket *iohc) {
     ESP_LOGV(LOG_TAG_MSG_ARCHIVE_CALLBACK, "Packet count in packet buffer: %d\r", nextPacket);
     if (nextPacket >= IOHC_INBOUND_MAX_PACKETS) {
         nextPacket = IOHC_INBOUND_MAX_PACKETS - 1;
-        ESP_LOGE(LOG_TAG_MSG_ARCHIVE_CALLBACK, "*** Not enough buffers available. Please erase current ones\n");
+        ESP_LOGE(LOG_TAG_MSG_ARCHIVE_CALLBACK, "*** Not enough buffers available. Please erase current ones");
         return false;
     }
 

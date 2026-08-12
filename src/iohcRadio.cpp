@@ -139,18 +139,18 @@ namespace IOHC {
         callbackQueue = xQueueCreate(20, sizeof(struct Callback *));
         auto callbackTaskCode = xTaskCreatePinnedToCore(callbackTaskLoop, "CallbackTask", 4096, NULL, 5, &callbackTask, 0);
         if (callbackTaskCode != pdPASS || callbackQueue == NULL) {
-            printf("ERROR: Can't create callback-task or corresponding queue %d\n", callbackTaskCode);
+            ESP_LOGE(LOG_TAG, "Can't create callback-task or corresponding queue %d", callbackTaskCode);
             // sx127x_destroy(device);
             return;
         }
 
         // start state machine
-        printf("Starting Interrupt Handler...\n");
+        ESP_LOGI(LOG_TAG, "Starting interrupt handler...");
         BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle_interrupt_task", 8192,
                                                        this /*nullptr*//*device*/, /*tskIDLE_PRIORITY*/4,
                                                        &handle_interrupt, /*tskNO_AFFINITY*/xPortGetCoreID());
         if (task_code != pdPASS) {
-            printf("ERROR STATEMACHINE Can't create task %d\n", task_code);
+            ESP_LOGE(LOG_TAG, "STATEMACHINE Can't create task %d", task_code);
             // sx127x_destroy(device);
             return;
         }

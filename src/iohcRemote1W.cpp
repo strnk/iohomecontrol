@@ -227,7 +227,7 @@ namespace IOHC {
                 //printf("\n");
                 display1WAction(r.node, remoteButtonToString(cmd), "TX", r.name.c_str());
 
-                ESP_LOGI(LOG_TAG, "%s position: %.0f%%\n", r.name.c_str(), r.positionTracker.getPosition());
+                ESP_LOGI(LOG_TAG, "%s position: %.0f%%", r.name.c_str(), r.positionTracker.getPosition());
                 display1WPosition(r.node, r.positionTracker.getPosition(), r.name.c_str());
 
                 r.paired = false;
@@ -272,7 +272,7 @@ namespace IOHC {
                 digitalWrite(RX_LED, digitalRead(RX_LED) ^ 1);
                 _radioInstance->send(packets2send);
                 display1WAction(r.node, remoteButtonToString(cmd), "TX", r.name.c_str());
-                Serial.printf("%s position: %.0f%%\n", r.name.c_str(), r.positionTracker.getPosition());
+                ESP_LOGI(LOG_TAG, "%s position: %.0f%%", r.name.c_str(), r.positionTracker.getPosition());
                 display1WPosition(r.node, r.positionTracker.getPosition(), r.name.c_str());
                 r.paired = true;
                 break;
@@ -602,7 +602,7 @@ namespace IOHC {
                 _radioInstance->send(packets2send);
 
                 display1WAction(r.node, remoteButtonToString(cmd), "TX", r.name.c_str());
-                ESP_LOGI(LOG_TAG, "%s position: %.0f%%\n", r.name.c_str(), r.positionTracker.getPosition());
+                ESP_LOGI(LOG_TAG, "%s position: %.0f%%", r.name.c_str(), r.positionTracker.getPosition());
                 display1WPosition(r.node, r.positionTracker.getPosition(), r.name.c_str());
                 break;
             }
@@ -614,7 +614,7 @@ namespace IOHC {
         _radioInstance = iohcRadio::getInstance();
 
         if (LittleFS.exists(IOHC_1W_REMOTE))
-            ESP_LOGI(LOG_TAG, "Loading 1W remote settings from '%s'\n", 
+            ESP_LOGI(LOG_TAG, "Loading 1W remote settings from '%s'", 
                 IOHC_1W_REMOTE);
         else {
             ESP_LOGE(LOG_TAG, "1W remote settings file '%s' not found",
@@ -715,7 +715,7 @@ namespace IOHC {
         }
 
         remotes = loadedRemotes;
-        ESP_LOGI(LOG_TAG, "Loaded %d x 1W remotes\n", remotes.size());
+        ESP_LOGI(LOG_TAG, "Loaded %d x 1W remotes", remotes.size());
 
         // Ensure JSON reflects the latest sequence values and persist defaults
         if (updateFile) {
@@ -728,7 +728,7 @@ namespace IOHC {
     bool iohcRemote1W::save() {
         MutexGuard guard(saveMutex);
         if (remotes.empty()) {
-            ESP_LOGW(LOG_TAG, "Refusing to save empty 1W remote list to %s\n", IOHC_1W_REMOTE);
+            ESP_LOGW(LOG_TAG, "Refusing to save empty 1W remote list to %s", IOHC_1W_REMOTE);
             return false;
         }
 
@@ -737,7 +737,7 @@ namespace IOHC {
         LittleFS.remove(tempFile);
         fs::File f = LittleFS.open(tempFile, "w");
         if (!f) {
-            ESP_LOGE(LOG_TAG, "Failed to open temporary 1W settings file %s\n", tempFile);
+            ESP_LOGE(LOG_TAG, "Failed to open temporary 1W settings file %s", tempFile);
             return false;
         }
 
@@ -868,11 +868,11 @@ const std::vector<iohcRemote1W::remote>& iohcRemote1W::getRemotes() const {
             return e.description == description;
         });
         if (it == remotes.end()) {
-            Serial.printf("Device %s not found\n", description.c_str());
+            ESP_LOGE(LOG_TAG, "Device %s not found", description.c_str());
             return false;
         }
         if (it->paired) {
-            Serial.println("WARNING: Device is paired. Unpair before removing.");
+            ESP_LOGW(LOG_TAG, "Device %s is paired. Unpair before removing.", description.c_str());
             return false;
         }
         std::string id = bytesToHexString(it->node, sizeof(it->node));
@@ -898,7 +898,7 @@ const std::vector<iohcRemote1W::remote>& iohcRemote1W::getRemotes() const {
             return e.description == description;
         });
         if (it == remotes.end()) {
-            Serial.printf("Device %s not found\n", description.c_str());
+            ESP_LOGE(LOG_TAG, "Device %s not found", description.c_str());
             return false;
         }
         it->name = name;
@@ -919,7 +919,7 @@ const std::vector<iohcRemote1W::remote>& iohcRemote1W::getRemotes() const {
             return e.description == description;
         });
         if (it == remotes.end()) {
-            Serial.printf("Device %s not found\n", description.c_str());
+            ESP_LOGE(LOG_TAG, "Device %s not found", description.c_str());
             return;
         }
         remote &r = *it;
@@ -978,7 +978,7 @@ const std::vector<iohcRemote1W::remote>& iohcRemote1W::getRemotes() const {
             return e.description == description;
         });
         if (it == remotes.end()) {
-            Serial.printf("Device %s not found\n", description.c_str());
+            ESP_LOGE(LOG_TAG, "Device %s not found", description.c_str());
             return false;
         }
         it->travelTime = travelTime;
@@ -992,7 +992,7 @@ const std::vector<iohcRemote1W::remote>& iohcRemote1W::getRemotes() const {
             return e.description == description;
         });
         if (it == remotes.end()) {
-            Serial.printf("Device %s not found\n", description.c_str());
+            ESP_LOGE(LOG_TAG, "Device %s not found", description.c_str());
             return false;
         }
         it->repeatOnNoResponse = repeatOnNoResponse;
