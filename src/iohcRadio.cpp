@@ -75,7 +75,6 @@ namespace IOHC {
         bool preamble = digitalRead(RADIO_PREAMBLE_DETECTED);
         bool payload = digitalRead(RADIO_PACKET_AVAIL);
         iohcRadio::txComplete = true;
-        ESP_LOGV(LOG_TAG, "TX: TX-RX DONE detected, flag set");
 
 
         if (payload) {
@@ -646,8 +645,5 @@ bool queueCallback(IohcPacketDelegate* callback, iohcPacket* packet) {
 
     void IRAM_ATTR iohcRadio::setRadioState(RadioState newState) {
         radioState = newState;
-        // Optional debug:
-        //printf("State changed to: %d\n", static_cast<int>(newState));
-        ESP_LOGV(LOG_TAG, "State: %s", radioStateToString(newState));
     }
 }
